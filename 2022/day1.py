@@ -5,6 +5,8 @@ from pathlib import Path
 with open(Path(__file__).parent.joinpath("inputs", "day1.txt")) as fp:
     lines = fp.readlines()
 
+# we store the list of calories for each elf in values, and we use the last element
+# of values to accumulate
 values: list[int] = [0]
 for line in lines:
     if not line.strip():
