@@ -1,9 +1,8 @@
 # -*- encoding: utf-8 -*-
 
-from pathlib import Path
+import sys
 
-with open(Path(__file__).parent.joinpath("inputs", "day1.txt")) as fp:
-    lines = fp.readlines()
+lines = sys.stdin.readlines()
 
 # we store the list of calories for each elf in values, and we use the last element
 # of values to accumulate

@@ -1,6 +1,8 @@
 # -*- encoding: utf-8 -*-
 
-from pathlib import Path
+import sys
+
+lines = sys.stdin.readlines()
 
 # the solution relies on replacing rock / paper / scissor by values 0 / 1 / 2 and using
 # modulo-3 arithmetic
@@ -11,10 +13,7 @@ from pathlib import Path
 
 # we read the lines in a Nx2 in array with value 0/1/2 instead of A/B/C or X/Y/Z for
 # easier manipulation
-with open(Path(__file__).parent.joinpath("inputs", "day2.txt")) as fp:
-    values = [
-        (ord(row[0]) - ord("A"), ord(row[2]) - ord("X")) for row in fp.readlines()
-    ]
+values = [(ord(row[0]) - ord("A"), ord(row[2]) - ord("X")) for row in lines]
 
 
 def score_1(ux: int, vx: int) -> int:
