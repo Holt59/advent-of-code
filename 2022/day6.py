@@ -1,6 +1,5 @@
 # -*- encoding: utf-8 -*-
 
-import itertools
 import sys
 
 data = sys.stdin.read().strip()

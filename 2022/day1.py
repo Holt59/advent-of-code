@@ -14,7 +14,7 @@ for line in lines:
         values[-1] += int(line.strip())
 
 # part 1
-print(f"max is {max(values)}")
+print(f"answer 1 is {max(values)}")
 
 # part 2
-print(f"sum of top 3 is {sum(sorted(values)[-3:])}")
+print(f"answer 2 is {sum(sorted(values)[-3:])}")

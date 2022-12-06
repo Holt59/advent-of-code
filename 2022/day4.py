@@ -12,7 +12,7 @@ def make_range(value: str) -> set[int]:
 
 sections = [tuple(make_range(part) for part in line.split(",")) for line in lines]
 
-score_1 = sum(s1.intersection(s2) in (s1, s2) for s1, s2 in sections)
+score_1 = sum(s1.issubset(s2) or s2.issubset(s1) for s1, s2 in sections)
 print(f"score 1 is {score_1}")
 
 score_2 = sum(bool(s1.intersection(s2)) for s1, s2 in sections)
