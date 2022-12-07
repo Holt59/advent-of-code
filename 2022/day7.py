@@ -5,6 +5,13 @@ from pathlib import Path
 
 lines = sys.stdin.read().splitlines()
 
+# we are going to use Path to create path and go up/down in the file tree since it
+# implements everything we need
+#
+# we can use .resolve() to get normalized path, although this will add C:\ to all paths
+# on Windows but that is not an issue since only the sizes matter
+#
+
 # mapping from path to list of files or directories
 trees: dict[Path, list[Path]] = {}
 
