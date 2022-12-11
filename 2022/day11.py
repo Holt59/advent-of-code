@@ -3,16 +3,16 @@
 import copy
 import sys
 from functools import reduce
-from typing import Callable
+from typing import Callable, Final, Mapping, Sequence
 
 
 class Monkey:
 
-    id: int
-    items: list[int]
-    worry_fn: Callable[[int], int]
-    test_value: int
-    throw_targets: dict[bool, int]
+    id: Final[int]
+    items: Final[Sequence[int]]
+    worry_fn: Final[Callable[[int], int]]
+    test_value: Final[int]
+    throw_targets: Final[Mapping[bool, int]]
 
     def __init__(
         self,
@@ -48,30 +48,18 @@ def parse_monkey(lines: list[str]) -> Monkey:
     # parse worry
     worry_fn: Callable[[int], int]
     worry_s = lines[2].split("new =")[1].strip()
-    operand = worry_s.split()[-1].strip()
+    operand = worry_s.split()[2].strip()
 
     if worry_s.startswith("old *"):
         if operand == "old":
-
-            def worry_fn(w: int) -> int:
-                return w * w
-
+            worry_fn = lambda w: w * w  # noqa: E731
         else:
-
-            def worry_fn(w: int) -> int:
-                return w * int(operand)
-
+            worry_fn = lambda w: w * int(operand)  # noqa: E731
     elif worry_s.startswith("old +"):
         if operand == "old":
-
-            def worry_fn(w: int) -> int:
-                return w + w
-
+            worry_fn = lambda w: w + w  # noqa: E731
         else:
-
-            def worry_fn(w: int) -> int:
-                return w + int(operand)
-
+            worry_fn = lambda w: w + int(operand)  # noqa: E731
     else:
         assert False, worry_s
 
@@ -92,11 +80,10 @@ def run(
     monkeys: list[Monkey], n_rounds: int, me_worry_fn: Callable[[int], int]
 ) -> dict[Monkey, int]:
     """
-    The list of monkeys is modified in place.
+    Perform a full run.
 
     Args:
-        monkeys: Initial list of monkeys. The Monkey will be modified in places (their
-            items attributes).
+        monkeys: Initial list of monkeys. The Monkey are not modified.
         n_rounds: Number of rounds to run.
         me_worry_fn: Worry function to apply after the Monkey operation (e.g., divide
             by 3 for round 1).
@@ -104,12 +91,16 @@ def run(
     Returns:
         A mapping containing, for each monkey, the number of items inspected.
     """
+    # copy of the items
+    items = {monkey: list(monkey.items) for monkey in monkeys}
+
+    # number of inspects
     inspects = {monkey: 0 for monkey in monkeys}
 
     for round in range(n_rounds):
 
         for monkey in monkeys:
-            for item in monkey.items:
+            for item in items[monkey]:
                 inspects[monkey] += 1
 
                 # compute the new worry level
@@ -119,10 +110,10 @@ def run(
                 target = monkey.throw_targets[item % monkey.test_value == 0]
                 assert target != monkey.id
 
-                monkeys[target].items.append(item)
+                items[monkeys[target]].append(item)
 
             # clear after the loop
-            monkey.items.clear()
+            items[monkey].clear()
 
     return inspects
 
