@@ -2,6 +2,7 @@
 
 import heapq
 import sys
+from typing import Iterator
 
 
 def dijkstra(
@@ -13,21 +14,7 @@ def dijkstra(
     def heuristic(row: int, col: int) -> int:
         return abs(end[0] - row) + abs(end[1] - col)
 
-    queue: list[tuple[tuple[int, int], tuple[int, int]]] = []
-    visited: set[tuple[int, int]] = set()
-    lengths: dict[tuple[int, int], int] = {}
-    parents: dict[tuple[int, int], tuple[int, int]] = {}
-
-    heapq.heappush(queue, ((heuristic(start[0], start[1]), 0), start))
-
-    while queue:
-        (_, length), (c_row, c_col) = heapq.heappop(queue)
-
-        visited.add((c_row, c_col))
-
-        if (c_row, c_col) == end:
-            break
-
+    def neighbors(row: int, col: int) -> Iterator[tuple[int, int]]:
         for n_row, n_col in (
             (c_row - 1, c_col),
             (c_row + 1, c_col),
@@ -38,10 +25,27 @@ def dijkstra(
             if not (n_row >= 0 and n_row < n_rows and n_col >= 0 and n_col < n_cols):
                 continue
 
-            if (n_row, n_col) in visited:
+            if grid[n_row][n_col] > grid[c_row][c_col] + 1:
                 continue
 
-            if grid[n_row][n_col] > grid[c_row][c_col] + 1:
+            yield n_row, n_col
+
+    queue: list[tuple[tuple[int, int], tuple[int, int]]] = []
+
+    visited: set[tuple[int, int]] = set()
+    lengths: dict[tuple[int, int], int] = {}
+    parents: dict[tuple[int, int], tuple[int, int]] = {}
+
+    heapq.heappush(queue, ((heuristic(start[0], start[1]), 0), start))
+
+    while queue and (end not in visited):
+        (_, length), (c_row, c_col) = heapq.heappop(queue)
+
+        visited.add((c_row, c_col))
+
+        for n_row, n_col in neighbors(c_row, c_col):
+
+            if (n_row, n_col) in visited:
                 continue
 
             if length + 1 < lengths.get((n_row, n_col), n_rows * n_cols):
