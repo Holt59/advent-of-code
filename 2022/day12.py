@@ -82,6 +82,33 @@ def print_path(path: list[tuple[int, int]], n_rows: int, n_cols: int) -> None:
     print("\n".join("".join(row) for row in graph))
 
 
+def neighbors(
+    grid: list[list[int]], node: tuple[int, int], up: bool
+) -> Iterator[tuple[int, int]]:
+    n_rows = len(grid)
+    n_cols = len(grid[0])
+
+    c_row, c_col = node
+    for n_row, n_col in (
+        (c_row - 1, c_col),
+        (c_row + 1, c_col),
+        (c_row, c_col - 1),
+        (c_row, c_col + 1),
+    ):
+
+        if not (n_row >= 0 and n_row < n_rows and n_col >= 0 and n_col < n_cols):
+            continue
+
+        if up and grid[n_row][n_col] > grid[c_row][c_col] + 1:
+            continue
+        elif not up and grid[n_row][n_col] < grid[c_row][c_col] - 1:
+            continue
+
+        yield n_row, n_col
+
+
+# === main code ===
+
 lines = sys.stdin.read().splitlines()
 
 grid = [[ord(cell) - ord("a") for cell in line] for line in lines]
@@ -106,47 +133,19 @@ for i_row, row in enumerate(grid):
 grid[start[0]][start[1]] = 0
 grid[end[0]][end[1]] = ord("z") - ord("a")
 
-n_rows = len(grid)
-n_cols = len(grid[0])
-
-
-def heuristic(lhs: tuple[int, int], rhs: tuple[int, int]) -> float:
-    return abs(lhs[0] - rhs[0]) + abs(lhs[1] - rhs[1])
-
-
-def neighbors(node: tuple[int, int], up: bool) -> Iterator[tuple[int, int]]:
-    c_row, c_col = node
-    for n_row, n_col in (
-        (c_row - 1, c_col),
-        (c_row + 1, c_col),
-        (c_row, c_col - 1),
-        (c_row, c_col + 1),
-    ):
-
-        if not (n_row >= 0 and n_row < n_rows and n_col >= 0 and n_col < n_cols):
-            continue
-
-        if up and grid[n_row][n_col] > grid[c_row][c_col] + 1:
-            continue
-        elif not up and grid[n_row][n_col] < grid[c_row][c_col] - 1:
-            continue
-
-        yield n_row, n_col
-
 
 lengths_1, parents_1 = dijkstra(
-    start=start, neighbors=lambda n: neighbors(n, True), cost=lambda lhs, rhs: 1
+    start=start, neighbors=lambda n: neighbors(grid, n, True), cost=lambda lhs, rhs: 1
 )
 path_1 = make_path(parents_1, start, end)
 assert path_1 is not None
 
 print_path(path_1, n_rows=len(grid), n_cols=len(grid[0]))
 
-answer_1 = lengths_1[end] - 1
-print(f"answer 1 is {answer_1}")
+print(f"answer 1 is {lengths_1[end] - 1}")
 
 lengths_2, parents_2 = dijkstra(
-    start=end, neighbors=lambda n: neighbors(n, False), cost=lambda lhs, rhs: 1
+    start=end, neighbors=lambda n: neighbors(grid, n, False), cost=lambda lhs, rhs: 1
 )
 answer_2 = min(lengths_2.get(start, float("inf")) for start in start_s)
 print(f"answer 2 is {answer_2}")
