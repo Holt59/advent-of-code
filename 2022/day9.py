@@ -2,6 +2,8 @@
 
 import sys
 
+import numpy as np
+
 
 def move(head: tuple[int, int], command: str) -> tuple[int, int]:
 
@@ -24,21 +26,10 @@ def follow(head: tuple[int, int], tail: tuple[int, int]) -> tuple[int, int]:
     h_col, h_row = head
     t_col, t_row = tail
 
-    # cover, nothing to do
-    if head == tail:
-        pass
-    elif h_col == t_col and abs(h_row - t_row) > 1:
-        diff = (h_row - t_row) // abs(h_row - t_row)
-        tail = (t_col, t_row + diff)
-    elif h_row == t_row and abs(h_col - t_col) > 1:
-        diff = (h_col - t_col) // abs(h_col - t_col)
-        tail = (t_col + diff, t_row)
-    elif abs(h_col - t_col) > 1 or abs(h_row - t_row) > 1:
-        c_diff = (h_col - t_col) // abs(h_col - t_col)
-        r_diff = (h_row - t_row) // abs(h_row - t_row)
-        tail = (t_col + c_diff, t_row + r_diff)
+    if abs(t_col - h_col) <= 1 and abs(t_row - h_row) <= 1:
+        return tail
 
-    return tail
+    return t_col + np.sign(h_col - t_col), t_row + np.sign(h_row - t_row)
 
 
 def run(commands: list[str], n_blocks: int) -> list[tuple[int, int]]:
