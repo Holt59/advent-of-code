@@ -12,6 +12,20 @@ def dijkstra(
     neighbors: Callable[[Node], Iterator[Node]],
     cost: Callable[[Node, Node], float],
 ) -> tuple[dict[Node, float], dict[Node, Node]]:
+    """
+    Compute shortest paths from one node to all reachable ones.
+
+    Args:
+        start: Starting node.
+        neighbors: Function returning the neighbors of a node.
+        cost: Function to compute the cost of an edge.
+
+    Returns:
+        A tuple (lengths, parents) where lengths is a mapping from Node to distance
+        (from the starting node) and parents a mapping from parents Node (in the
+        shortest path). If keyset of lengths and parents is the same. If a Node is not
+        in the mapping, it cannot be reached from the starting node.
+    """
 
     queue: list[tuple[float, Node]] = []
 
