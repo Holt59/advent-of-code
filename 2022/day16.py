@@ -33,25 +33,28 @@ class Pipe(NamedTuple):
         return self.name
 
 
-def breadth_first_search(pipes: dict[str, Pipe], pipe_1: Pipe, pipe_2: Pipe) -> int:
+def breadth_first_search(pipes: dict[str, Pipe], pipe: Pipe) -> dict[Pipe, int]:
+    """
+    Runs a BFS from the given pipe and return the shortest distance (in term of hops)
+    to all other pipes.
+    """
     queue = [(0, pipe_1)]
     visited = set()
+    distances: dict[Pipe, int] = {}
 
-    while queue:
+    while len(distances) < len(pipes):
         distance, current = heapq.heappop(queue)
 
         if current in visited:
             continue
 
         visited.add(current)
-
-        if current == pipe_2:
-            return distance
+        distances[current] = distance
 
         for tunnel in current.tunnels:
             heapq.heappush(queue, (distance + 1, pipes[tunnel]))
 
-    return -1
+    return distances
 
 
 def update_with_better(
@@ -141,8 +144,12 @@ for line in lines:
 # compute distances from one valve to any other
 distances: dict[tuple[Pipe, Pipe], int] = {}
 for pipe_1 in pipes.values():
-    for pipe_2 in pipes.values():
-        distances[pipe_1, pipe_2] = breadth_first_search(pipes, pipe_1, pipe_2)
+    distances.update(
+        {
+            (pipe_1, pipe_2): distance
+            for pipe_2, distance in breadth_first_search(pipes, pipe_1).items()
+        }
+    )
 
 # valves with flow
 relevant_pipes = frozenset(pipe for pipe in pipes.values() if pipe.flow > 0)
