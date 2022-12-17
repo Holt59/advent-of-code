@@ -130,14 +130,14 @@ tower, *_ = build_tower(2022, line)
 answer_1 = tower_hight(tower)
 print(f"answer 1 is {answer_1}")
 
-total_rocks = 1_000_000_000_000
-tower_1, n_rocks_1, (i_rocks_1, i_jet_1), prev_1 = build_tower(total_rocks, line, True)
+TOTAL_ROCKS = 1_000_000_000_000
+tower_1, n_rocks_1, (i_rocks_1, i_jet_1), prev_1 = build_tower(TOTAL_ROCKS, line, True)
 
 # shift the line
 line = line[i_jet_1:] + line[:i_jet_1]
 
 # remaining rocks
-remaining_rocks = total_rocks - n_rocks_1
+remaining_rocks = TOTAL_ROCKS - n_rocks_1
 n_repeat_rocks = n_rocks_1 - prev_1
 
 # repeated tower
