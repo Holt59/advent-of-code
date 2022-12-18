@@ -1,31 +1,5 @@
 # -*- encoding: utf-8 -*-
 
-"""
-Part 2:
-    The idea is to find a repeatable tower to not have to calculate up to the given
-    number.
-
-    The issue here is that you can consume a variable number of jets per rock, so you
-    cannot simply build a tower of hight LCM(len(ROCKS), len(JETS)), you need to find
-    a repeat point. The easiest repeat point is one where the incoming rock is the
-    first one (horizontal line) at the same place in the jet sequence.
-
-    The first rock cannot pass any rock present in the tower, so we know if we start
-    with the same sequence of jets, it will end at the exact same positions (bottom)
-    and following rocks will follow the same pattern.
-
-    What I did:
-      1. Place rocks as in part 1 but keep tracks of the (rock 0, jet) previously done
-         (where jet is the index in the sequence, not just '<' or '>'). When a
-         (rock 0, jet) pair gets repeats, stop the process.
-      2. At this points, you have places N rocks and the number of rocks between the
-         two (rock 0, jet) points is K. You have 1000... - N rocks to place, and you
-         can repeat sequence of K blocks by building towers of hight K starting with
-         rock 0 and at position "jet" in the sequence of jets.
-      3. Once this is done, you are left with (1000... - N) % K rocks to place, starting
-         again at index "jet" in the sequence of jets.
-"""
-
 import sys
 from typing import Sequence, TypeVar
 
@@ -45,7 +19,7 @@ def print_tower(tower: np.ndarray, out: str = "#"):
     print("+" + "-" * tower.shape[1] + "+")
 
 
-def tower_hight(tower: np.ndarray) -> int:
+def tower_height(tower: np.ndarray) -> int:
     return int(tower.shape[0] - tower[::-1, :].argmax(axis=0).min() - 1)
 
 
@@ -74,12 +48,13 @@ def build_tower(
     jets: str,
     early_stop: bool = False,
     init: np.ndarray = np.ones(WIDTH, dtype=bool),
-) -> tuple[np.ndarray, int, tuple[int, int], int]:
+) -> tuple[np.ndarray, int, int, dict[int, int]]:
 
     tower = EMPTY_BLOCKS.copy()
     tower[0, :] = init
 
     done_at: dict[tuple[int, int], int] = {}
+    heights: dict[int, int] = {}
     i_jet, i_rock = 0, 0
     rock_count = 0
 
@@ -119,38 +94,32 @@ def build_tower(
                 rock_y += 1
                 break
 
+        heights[rock_count] = tower_height(tower)
         tower[rock_y, rock_x] = True
 
-    return tower, rock_count, (i_rock, i_jet), done_at.get((i_rock, i_jet), -1)
+    return tower, rock_count, done_at.get((i_rock, i_jet), -1), heights
 
 
 line = sys.stdin.read().strip()
 
 tower, *_ = build_tower(2022, line)
-answer_1 = tower_hight(tower)
+answer_1 = tower_height(tower)
 print(f"answer 1 is {answer_1}")
 
 TOTAL_ROCKS = 1_000_000_000_000
-tower_1, n_rocks_1, (i_rocks_1, i_jet_1), prev_1 = build_tower(TOTAL_ROCKS, line, True)
+tower_1, n_rocks_1, prev_1, heights_1 = build_tower(TOTAL_ROCKS, line, True)
+assert prev_1 > 0
 
-# shift the line
-line = line[i_jet_1:] + line[:i_jet_1]
-
-# remaining rocks
+# 2767 1513
 remaining_rocks = TOTAL_ROCKS - n_rocks_1
 n_repeat_rocks = n_rocks_1 - prev_1
-
-# repeated tower
 n_repeat_towers = remaining_rocks // n_repeat_rocks
-tower_repeat, *_ = build_tower(n_repeat_rocks, line)
 
-# remaining tower
-remaining_rocks = remaining_rocks % n_repeat_rocks
-tower_remaining, *_ = build_tower(remaining_rocks, line)
-
-answer_2 = (
-    tower_hight(tower_1)
-    + tower_hight(tower_repeat) * n_repeat_towers
-    + tower_hight(tower_remaining)
+base_height = heights_1[prev_1]
+repeat_height = heights_1[prev_1 + n_repeat_rocks - 1] - heights_1[prev_1]
+remaining_height = (
+    heights_1[prev_1 + remaining_rocks % n_repeat_rocks] - heights_1[prev_1]
 )
+
+answer_2 = base_height + (n_repeat_towers + 1) * repeat_height + remaining_height
 print(f"answer 2 is {answer_2}")
