@@ -1,17 +1,14 @@
 # -*- encoding: utf-8 -*-
 
-import heapq
-import math
 import sys
-import time
-from collections import defaultdict
-from typing import Literal, TypedDict
+from typing import Literal
 
 import numpy as np
+import parse
 from tqdm import tqdm
 
 Reagent = Literal["ore", "clay", "obsidian", "geode"]
-REAGENTS: tuple[Reagent] = (
+REAGENTS: tuple[Reagent, ...] = (
     "ore",
     "clay",
     "obsidian",
@@ -19,23 +16,6 @@ REAGENTS: tuple[Reagent] = (
 )
 
 IntOfReagent = dict[Reagent, int]
-
-lines = sys.stdin.read().splitlines()
-
-blueprints: list[dict[Reagent, IntOfReagent]] = [
-    {
-        "ore": {"ore": 4},
-        "clay": {"ore": 2},
-        "obsidian": {"ore": 3, "clay": 14},
-        "geode": {"ore": 2, "obsidian": 7},
-    },
-    {
-        "ore": {"ore": 2},
-        "clay": {"ore": 3},
-        "obsidian": {"ore": 3, "clay": 8},
-        "geode": {"ore": 3, "obsidian": 12},
-    },
-]
 
 
 class State:
@@ -64,11 +44,6 @@ class State:
             and self.reagents == other.reagents
         )
 
-    def __lt__(self, other) -> bool:
-        return isinstance(other, State) and tuple(
-            (self.robots[r], self.reagents[r]) for r in REAGENTS
-        ) > tuple((other.robots[r], other.reagents[r]) for r in REAGENTS)
-
     def __hash__(self) -> int:
         return hash(tuple((self.robots[r], self.reagents[r]) for r in REAGENTS))
 
@@ -89,399 +64,124 @@ def dominates(lhs: State, rhs: State):
     )
 
 
-MAX_TIME = 24
-blueprint = blueprints[1]
+lines = sys.stdin.read().splitlines()
 
-# parents: dict[State, tuple[State | None, int]] = {State(): (None, 0)}
-# queue = [(0, State())]
-# visited: set[State] = set()
-# at_time: dict[int, list[State]] = defaultdict(lambda: [])
+blueprints: list[dict[Reagent, IntOfReagent]] = []
+for line in lines:
+    r = parse.parse(
+        "Blueprint {}: "
+        "Each ore robot costs {:d} ore. "
+        "Each clay robot costs {:d} ore. "
+        "Each obsidian robot costs {:d} ore and {:d} clay. "
+        "Each geode robot costs {:d} ore and {:d} obsidian.",
+        line,
+    )
 
-# while queue:
-#     time, state = heapq.heappop(queue)
-#     if state in visited:
-#         continue
-
-#     print(time, state)
-
-#     visited.add(state)
-
-#     at_time[time].append(state)
-
-#     if time > MAX_TIME:
-#         continue
-
-#     if len(queue) % 200 == 0:
-#         print(len(queue), len(visited), time)
-
-#     can_build_any: bool = False
-#     for reagent in REAGENTS:
-#         needed = blueprint[reagent]
-
-#         if any(state.robots[r] == 0 for r in needed):
-#             continue
-
-#         time_to_complete = max(
-#             max(
-#                 math.ceil((needed[r] - state.reagents[r]) / state.robots[r])
-#                 for r in needed
-#             ),
-#             0,
-#         )
-
-#         # if time_to_complete != 0:
-#         #     continue
-
-#         if time + time_to_complete + 1 > MAX_TIME:
-#             continue
-
-#         wait = time_to_complete + 1
-
-#         reagents = {
-#             r: state.reagents[r] + wait * state.robots[r] - needed.get(r, 0)
-#             for r in REAGENTS
-#         }
-
-#         robots = state.robots.copy()
-#         robots[reagent] += 1
-
-#         state_2 = State(reagents=reagents, robots=robots)
-
-#         if state_2 in visited:
-#             continue
-
-#         if any(dominates(state_v, state_2) for state_v in at_time[time + wait]):
-#             continue
-
-#         # print(time + wait)
-#         # if any(dominates(state_3, state_2) for state_3 in at_time[time + wait]):
-#         # print("?")
-#         # continue
-
-#         if state_2 not in parents or parents[state_2][1] > time + wait:
-#             parents[state_2] = (state, time + wait)
-#             heapq.heappush(queue, (time + wait, state_2))
-#             can_build_any = True
-#             at_time[time + wait].append(state_2)
-
-#     if not can_build_any:
-#         state_2 = State(
-#             reagents={
-#                 r: state.reagents[r] + state.robots[r] * (MAX_TIME - time)
-#                 for r in REAGENTS
-#             },
-#             robots=state.robots,
-#         )
-
-#         if state_2 in visited:
-#             continue
-
-#         if state_2 not in parents or parents[state_2][1] > time + wait:
-#             parents[state_2] = (state, MAX_TIME)
-#             heapq.heappush(queue, (MAX_TIME, state_2))
-
-# print(len(visited))
-# print(max(state.reagents["geode"] for state in visited))
-
-# exit()
-
-# while states:
-#     state = states.pop()
-#     processed.append(state)
-
-#     if state.time > MAX_TIME:
-#         continue
-
-#     if len(states) % 100 == 0:
-#         print(len(states), len(processed), min((s.time for s in states), default=1))
-
-#     can_build_any: bool = False
-#     for reagent in REAGENTS:
-#         needed = blueprint[reagent]
-
-#         if any(state.robots[r] == 0 for r in needed):
-#             continue
-
-#         time_to_complete = max(
-#             max(
-#                 math.ceil((needed[r] - state.reagents[r]) / state.robots[r])
-#                 for r in needed
-#             ),
-#             0,
-#         )
-
-#         if state.time + time_to_complete + 1 > MAX_TIME:
-#             continue
-
-#         wait = time_to_complete + 1
-
-#         reagents = {
-#             r: state.reagents[r] + wait * state.robots[r] - needed.get(r, 0)
-#             for r in REAGENTS
-#         }
-
-#         robots = state.robots.copy()
-#         robots[reagent] += 1
-
-#         can_build_any = True
-#         state_2 = State(time=state.time + wait, reagents=reagents, robots=robots)
-#         # print(f"{state} -> {state_2}")
-#         states.add(state_2)
-
-#         if not any(dominates(s2, state_2) for s2 in states):
-#             states.add(state)
-
-#         # print(f"can build {reagent} in {time_to_complete}")
-
-#     if not can_build_any:
-#         states.add(
-#             State(
-#                 time=MAX_TIME + 1,
-#                 reagents={
-#                     r: state.reagents[r] + state.robots[r] * (MAX_TIME - state.time)
-#                     for r in REAGENTS
-#                 },
-#                 robots=state.robots,
-#             )
-#         )
-
-#     if len(states) % 1000 == 0:
-#         print("filtering")
-#         states = {
-#             s1
-#             for s1 in states
-#             if not any(dominates(s2, s1) for s2 in states if s2 is not s1)
-#         }
-
-#     # if len(states) > 4:
-#     #     break
-
-#     # break
-
-# print(len(processed))
-# print(max(state.reagents["geode"] for state in processed))
-
-# exit()
-
-# for t in range(1, 25):
-#     states = set()
-#     for state in state_after_t[t - 1]:
-#         robots_that_can_be_built = [
-#             robot
-#             for robot in REAGENTS
-#             if all(
-#                 state.reagents[reagent] >= blueprint[robot].get(reagent, 0)
-#                 for reagent in REAGENTS
-#             )
-#         ]
-
-#         new_states = set()
-
-#         # new reagents
-#         reagents = {
-#             reagent: state.reagents[reagent] + state.robots[reagent]
-#             for reagent in REAGENTS
-#         }
-
-#         # if we can build anything, there is no point in waiting
-#         if len(robots_that_can_be_built) != len(REAGENTS):
-#             new_states.add(State(robots=state.robots, reagents=reagents))
-
-#         for robot in robots_that_can_be_built:
-#             robots = state.robots.copy()
-#             robots[robot] += 1
-#             reagents = {
-#                 reagent: state.reagents[reagent]
-#                 + state.robots[reagent]
-#                 - blueprint[robot].get(reagent, 0)
-#                 for reagent in REAGENTS
-#             }
-#             new_states.add(State(robots=robots, reagents=reagents))
-
-#         new_states = [
-#             s1
-#             for s1 in new_states
-#             if not any(s1 is not s2 and dominates(s2, s1) for s2 in new_states)
-#         ]
-
-#         states = {
-#             s1 for s1 in states if not any(dominates(s2, s1) for s2 in new_states)
-#         }
-#         states.update(new_states)
-
-#     state_after_t[t] = states
-
-# exit()
+    blueprints.append(
+        {
+            "ore": {"ore": r[1]},
+            "clay": {"ore": r[2]},
+            "obsidian": {"ore": r[3], "clay": r[4]},
+            "geode": {"ore": r[5], "obsidian": r[6]},
+        }
+    )
 
 
-MAX_TIME = 24
-blueprint = blueprints[0]
+def run(blueprint: dict[Reagent, dict[Reagent, int]], max_time: int) -> int:
 
-state_after_t: dict[int, list[State]] = {0: [State()]}
+    # since we can only build one robot per time, we do not need more than X robots
+    # of type K where X is the maximum number of K required among all robots, e.g.,
+    # in the first toy blueprint, we need at most 4 ore robots, 14 clay ones and 7
+    # obsidian ones
+    maximums = {
+        name: max(blueprint[r].get(name, 0) for r in REAGENTS) for name in REAGENTS
+    }
 
-for t in range(1, 25):
-    print(t, len(state_after_t[t - 1]))
+    state_after_t: dict[int, set[State]] = {0: [State()]}
 
-    bests_for_robots: dict[tuple[int, ...], list[State]] = {}
-    bests_for_reagents: dict[tuple[int, ...], list[State]] = {}
+    for t in range(1, max_time + 1):
 
-    state_after_t[t] = []
+        # list of new states at the end of step t that we are going to prune later
+        states_for_t: set[State] = set()
 
-    t1 = time.time()
+        for state in state_after_t[t - 1]:
+            robots_that_can_be_built = [
+                robot
+                for robot in REAGENTS
+                if all(
+                    state.reagents[reagent] >= blueprint[robot].get(reagent, 0)
+                    for reagent in REAGENTS
+                )
+            ]
 
-    for state in state_after_t[t - 1]:
-        robots_that_can_be_built = [
-            robot
-            for robot in REAGENTS
-            if all(
-                state.reagents[reagent] >= blueprint[robot].get(reagent, 0)
-                for reagent in REAGENTS
+            states_for_t.add(
+                State(
+                    robots=state.robots,
+                    reagents={
+                        reagent: state.reagents[reagent] + state.robots[reagent]
+                        for reagent in REAGENTS
+                    },
+                )
             )
-        ]
 
-        # print(t, robots_that_can_be_built)
-        new_states: set[State] = set()
+            # this speeds-up the process and work but I am not 100% sure this is right
+            if "geode" in robots_that_can_be_built:
+                robots_that_can_be_built = ["geode"]
+            else:
+                robots_that_can_be_built = [
+                    robot
+                    for robot in robots_that_can_be_built
+                    if state.robots[robot] < maximums[robot]
+                ]
 
-        # new reagents
-        reagents = {
-            reagent: state.reagents[reagent] + state.robots[reagent]
-            for reagent in REAGENTS
+            for robot in robots_that_can_be_built:
+                robots = state.robots.copy()
+                robots[robot] += 1
+                reagents = {
+                    reagent: state.reagents[reagent]
+                    + state.robots[reagent]
+                    - blueprint[robot].get(reagent, 0)
+                    for reagent in REAGENTS
+                }
+                states_for_t.add(State(robots=robots, reagents=reagents))
+
+        # use numpy to switch computation of dominated states -> store each state
+        # as a 8 array and use numpy broadcasting to find dominated states
+        states_after = np.asarray(list(states_for_t))
+        np_states = np.array(
+            [
+                [state.robots[r] for r in REAGENTS]
+                + [state.reagents[r] for r in REAGENTS]
+                for state in states_after
+            ]
+        )
+
+        to_keep = []
+        while len(np_states) > 0:
+            first_dom = (np_states[1:] >= np_states[0]).all(axis=1).any()
+
+            if first_dom:
+                np_states = np_states[1:]
+            else:
+                to_keep.append(np_states[0])
+                np_states = np_states[1:][~(np_states[1:] <= np_states[0]).all(axis=1)]
+
+        state_after_t[t] = {
+            State(
+                robots=dict(zip(REAGENTS, row[:4])),
+                reagents=dict(zip(REAGENTS, row[4:])),
+            )
+            for row in to_keep
         }
 
-        # if we can build anything, there is no point in waiting
-        new_states.add(State(robots=state.robots, reagents=reagents))
+    return max(state.reagents["geode"] for state in state_after_t[max_time])
 
-        for robot in robots_that_can_be_built:
-            robots = state.robots.copy()
-            robots[robot] += 1
-            reagents = {
-                reagent: state.reagents[reagent]
-                + state.robots[reagent]
-                - blueprint[robot].get(reagent, 0)
-                for reagent in REAGENTS
-            }
-            new_states.add(State(robots=robots, reagents=reagents))
 
-        for s1 in new_states:
-            r1 = tuple(s1.robots[r] for r in REAGENTS)
-            if r1 not in bests_for_robots:
-                bests_for_robots[r1] = [s1]
-            else:
-                is_dominated = False
-                for s2 in bests_for_robots[r1]:
-                    if all(s2.reagents[r] >= s1.reagents[r] for r in REAGENTS):
-                        is_dominated = True
-                        break
-                if not is_dominated:
-                    bests_for_robots[r1].append(s1)
+answer_1 = sum(
+    (i_blueprint + 1) * run(blueprint, 24)
+    for i_blueprint, blueprint in enumerate(tqdm(blueprints))
+)
+print(f"answer 1 is {answer_1}")
 
-            r2 = tuple(s1.reagents[r] for r in REAGENTS)
-            if r2 not in bests_for_reagents:
-                bests_for_reagents[r2] = [s1]
-            else:
-                is_dominated = False
-                for s2 in bests_for_reagents[r2]:
-                    if all(s2.robots[r] >= s1.robots[r] for r in REAGENTS):
-                        is_dominated = True
-                        break
-                if not is_dominated:
-                    bests_for_reagents[r2].append(s1)
-        # state_after_t[t].extend(new_states)
-
-    t2 = time.time()
-
-    for bests in bests_for_robots.values():
-        dominated = [False for _ in range(len(bests))]
-        for i_s1, s1 in enumerate(bests):
-            if dominated[i_s1]:
-                continue
-            for i_s2, s2 in enumerate(bests[i_s1 + 1 :], start=i_s1 + 1):
-                if dominated[i_s2]:
-                    continue
-                if all(s1.reagents[r] >= s2.reagents[r] for r in REAGENTS):
-                    dominated[i_s2] = True
-        state_after_t[t].extend(
-            s1 for i_s1, s1 in enumerate(bests) if not dominated[i_s1]
-        )
-    for bests in bests_for_reagents.values():
-        dominated = [False for _ in range(len(bests))]
-        for i_s1, s1 in enumerate(bests):
-            if dominated[i_s1]:
-                continue
-            for i_s2, s2 in enumerate(bests[i_s1 + 1 :], start=i_s1 + 1):
-                if dominated[i_s2]:
-                    continue
-                if all(s1.robots[r] >= s2.robots[r] for r in REAGENTS):
-                    dominated[i_s2] = True
-        state_after_t[t].extend(
-            s1 for i_s1, s1 in enumerate(bests) if not dominated[i_s1]
-        )
-
-    t3 = time.time()
-
-    np_states = np.array(
-        [
-            [state.robots[r] for r in REAGENTS] + [state.reagents[r] for r in REAGENTS]
-            for state in state_after_t[t]
-        ]
-    )
-    dominated = np.zeros(len(np_states), dtype=bool)
-
-    t4 = time.time()
-
-    # c = (np_states[None, :, :] <= np_states[:, None, :]).all(axis=-1)
-    # c[np.arange(len(np_states)), np.arange(len(np_states))] = False
-    # dominated = c.any(axis=0)
-
-    for i in range(len(np_states)):
-        if dominated[i]:
-            continue
-        dominated[i] = not (np_states[i + 1 :] <= np_states[i]).any(axis=1)
-
-        dominated[i + 1 :] = (np_states[i + 1 :] <= np_states[i]).all(axis=1)
-
-    t5 = time.time()
-
-    state_after_t[t] = list(np.array(state_after_t[t])[~dominated])
-
-    t6 = time.time()
-
-    print(
-        "->",
-        t,
-        len(state_after_t[t]),
-        dominated.sum(),
-        t2 - t1,
-        t3 - t2,
-        t4 - t3,
-        t5 - t4,
-        t6 - t5,
-    )
-
-    # print("->", len(state_after_t[t]))
-
-    # dominated = [False for _ in range(len(state_after_t[t]))]
-    # keep = set()
-    # for i_s1, s1 in enumerate(tqdm(state_after_t[t])):
-    #     if dominated[i_s1]:
-    #         continue
-    #     for i_s2, s2 in enumerate(state_after_t[t][i_s1 + 1 :], start=i_s1 + 1):
-    #         if dominated[i_s2]:
-    #             continue
-
-    #         if dominates(s1, s2):
-    #             dominated[i_s2] = True
-    #         elif dominates(s2, s1):
-    #             dominated[i_s1] = True
-    #             break
-
-    #     if not dominated[i_s1]:
-    #         keep.add(s1)
-
-    # state_after_t[t] = list(keep)
-
-    # print(len(state_after_t[t]))
-    # print(sum(dominated))
-    # break
-
-print(max(state.reagents["geode"] for state in state_after_t[24]))
+answer_2 = run(blueprints[0], 32) * run(blueprints[1], 32) * run(blueprints[2], 32)
+print(f"answer 2 is {answer_2}")
