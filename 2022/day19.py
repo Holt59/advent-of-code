@@ -124,7 +124,6 @@ def run(blueprint: dict[Reagent, dict[Reagent, int]], max_time: int) -> int:
                 )
             )
 
-            # this speeds-up the process and work but I am not 100% sure this is right
             if "geode" in robots_that_can_be_built:
                 robots_that_can_be_built = ["geode"]
             else:
