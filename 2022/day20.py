@@ -1,23 +1,25 @@
 # -*- encoding: utf-8 -*-
 
-import math
 import sys
 
 
 class Number:
-    processed: bool
+    index: int
     value: int
 
-    def __init__(self, value: int):
+    def __init__(self, index: int, value: int):
+        self.index = index
         self.value = value
-        self.processed = False
 
     def __eq__(self, other):
         if isinstance(other, Number):
-            return self.value == other.value
+            return self.index == other.index
         elif isinstance(other, int):
             return self.value == other
         return False
+
+    def __hash__(self):
+        return hash(self.index)
 
     def __str__(self):
         return str(self.value)
@@ -26,79 +28,43 @@ class Number:
         return str(self)
 
 
-expected = iter(
-    [
-        [1, 2, -3, 3, -2, 0, 4],
-        [2, 1, -3, 3, -2, 0, 4],
-        [1, -3, 2, 3, -2, 0, 4],
-        [1, 2, 3, -2, -3, 0, 4],
-        [1, 2, -2, -3, 0, 3, 4],
-        [1, 2, -3, 0, 3, 4, -2],
-        [1, 2, -3, 0, 3, 4, -2],
-        [1, 2, -3, 4, 0, 3, -2],
-    ]
-)
+def decrypt(numbers: list[Number], key: int, rounds: int) -> int:
+
+    numbers = numbers.copy()
+    original = numbers.copy()
+    numbers2index = {number: number.index for number in numbers}
+
+    def swap(lhs: Number, rhs: Number):
+        i1, i2 = numbers2index[lhs], numbers2index[rhs]
+        numbers[i1], numbers[i2] = numbers[i2], numbers[i1]
+        numbers2index[lhs], numbers2index[rhs] = i2, i1
+
+    def move(index: int, value: int):
+        assert value >= 0
+        while value > 0:
+            if index == len(numbers) - 1:
+                swap(numbers[0], numbers[-1])
+                index, value = 0, value - 1
+            else:
+                swap(numbers[index + 1], numbers[index])
+                index, value = index + 1, value - 1
+
+    for _ in range(rounds):
+        for number in original:
+            index = numbers2index[number]
+            move(index, (number.value * key) % (len(numbers) - 1))
+
+    index_of_0 = numbers.index(0)
+    return sum(
+        numbers[(index_of_0 + offset) % len(numbers)].value * key
+        for offset in (1000, 2000, 3000)
+    )
 
 
-numbers = [Number(int(x)) for x in sys.stdin.readlines()]
-# numbers = [Number(0), Number(0), Number(-6)]
+numbers = [Number(i, int(x)) for i, x in enumerate(sys.stdin.readlines())]
 
-# print(next(expected))
-# print(numbers)
-# print("---")
-
-index = 0
-while index < len(numbers):
-    if numbers[index].processed:
-        index += 1
-        continue
-
-    number = numbers[index]
-    number.processed = True
-    target = (
-        index
-        + (number.value % len(numbers))
-        - int(number.value < 0) * math.ceil(abs(number.value) / len(numbers))
-    ) % len(numbers)
-
-    # print(
-    #     f"moving {number} from {index} to {target} (between {numbers[target]} and {numbers[(target + 1) % len(numbers)]})"
-    # )
-    if target == index:
-        index += 1
-    elif target == index + 1:
-        numbers[index], numbers[target] = numbers[target], numbers[index]
-    elif target == index - 1:
-        numbers[index], numbers[target] = numbers[target], numbers[index]
-    elif target > index:
-        # print(
-        #     numbers[:index],
-        #     numbers[index + 1 : target + 1],
-        #     [numbers[index]],
-        #     numbers[target + 1 :],
-        # )
-        numbers = (
-            numbers[:index]
-            + numbers[index + 1 : target + 1]
-            + [numbers[index]]
-            + numbers[target + 1 :]
-        )
-    else:
-        numbers = (
-            numbers[: target + 1]
-            + [numbers[index]]
-            + numbers[target + 1 : index]
-            + numbers[index + 1 :]
-        )
-        index -= 1
-
-    # print(next(expected))
-    # print(numbers)
-    # print("---")
-
-index_of_0 = numbers.index(Number(0))
-
-answer_1 = sum(
-    numbers[(index_of_0 + offset) % len(numbers)].value for offset in (1000, 2000, 3000)
-)
+answer_1 = decrypt(numbers, 1, 1)
 print(f"answer 1 is {answer_1}")
+
+answer_2 = decrypt(numbers, 811589153, 10)
+print(f"answer 2 is {answer_2}")
