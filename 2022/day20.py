@@ -4,24 +4,12 @@ import sys
 
 
 class Number:
-    index: int
     current: int
     value: int
 
-    def __init__(self, index: int, value: int):
-        self.index = index
-        self.current = index
+    def __init__(self, value: int):
+        self.current = 0
         self.value = value
-
-    def __eq__(self, other):
-        if isinstance(other, Number):
-            return self.value == other.value
-        elif isinstance(other, int):
-            return self.value == other
-        return False
-
-    def __hash__(self):
-        return hash(self.index)
 
     def __str__(self):
         return str(self.value)
@@ -35,8 +23,8 @@ def decrypt(numbers: list[Number], key: int, rounds: int) -> int:
     numbers = numbers.copy()
     original = numbers.copy()
 
-    for number in numbers:
-        number.current = number.index
+    for index, number in enumerate(numbers):
+        number.current = index
 
     for _ in range(rounds):
         for number in original:
@@ -46,32 +34,39 @@ def decrypt(numbers: list[Number], key: int, rounds: int) -> int:
 
             # need to wrap
             if target >= len(numbers):
-                for number_2 in numbers[:index]:
-                    number_2.current += 1
-                numbers = [number] + numbers[:index] + numbers[index + 1 :]
-
                 target = offset - (len(numbers) - index) + 1
-                index = 0
 
-            for number_2 in numbers[index : target + 1]:
-                number_2.current -= 1
+                for number_2 in numbers[target:index]:
+                    number_2.current += 1
 
+                numbers = (
+                    numbers[:target]
+                    + [number]
+                    + numbers[target:index]
+                    + numbers[index + 1 :]
+                )
+            else:
+                for number_2 in numbers[index : target + 1]:
+                    number_2.current -= 1
+
+                numbers = (
+                    numbers[:index]
+                    + numbers[index + 1 : target + 1]
+                    + [number]
+                    + numbers[target + 1 :]
+                )
             number.current = target
-            numbers = (
-                numbers[:index]
-                + numbers[index + 1 : target + 1]
-                + [number]
-                + numbers[target + 1 :]
-            )
 
-    index_of_0 = numbers.index(0)  # type: ignore
+    index_of_0 = next(
+        filter(lambda index: numbers[index].value == 0, range(len(numbers)))
+    )
     return sum(
         numbers[(index_of_0 + offset) % len(numbers)].value * key
         for offset in (1000, 2000, 3000)
     )
 
 
-numbers = [Number(i, int(x)) for i, x in enumerate(sys.stdin.readlines())]
+numbers = [Number(int(x)) for i, x in enumerate(sys.stdin.readlines())]
 
 answer_1 = decrypt(numbers, 1, 1)
 print(f"answer 1 is {answer_1}")
