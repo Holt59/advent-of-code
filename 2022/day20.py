@@ -5,15 +5,17 @@ import sys
 
 class Number:
     index: int
+    current: int
     value: int
 
     def __init__(self, index: int, value: int):
         self.index = index
+        self.current = index
         self.value = value
 
     def __eq__(self, other):
         if isinstance(other, Number):
-            return self.index == other.index
+            return self.value == other.value
         elif isinstance(other, int):
             return self.value == other
         return False
@@ -32,29 +34,37 @@ def decrypt(numbers: list[Number], key: int, rounds: int) -> int:
 
     numbers = numbers.copy()
     original = numbers.copy()
-    numbers2index = {number: number.index for number in numbers}
 
-    def swap(lhs: Number, rhs: Number):
-        i1, i2 = numbers2index[lhs], numbers2index[rhs]
-        numbers[i1], numbers[i2] = numbers[i2], numbers[i1]
-        numbers2index[lhs], numbers2index[rhs] = i2, i1
-
-    def move(index: int, value: int):
-        assert value >= 0
-        while value > 0:
-            if index == len(numbers) - 1:
-                swap(numbers[0], numbers[-1])
-                index, value = 0, value - 1
-            else:
-                swap(numbers[index + 1], numbers[index])
-                index, value = index + 1, value - 1
+    for number in numbers:
+        number.current = number.index
 
     for _ in range(rounds):
         for number in original:
-            index = numbers2index[number]
-            move(index, (number.value * key) % (len(numbers) - 1))
+            index = number.current
+            offset = (number.value * key) % (len(numbers) - 1)
+            target = index + offset
 
-    index_of_0 = numbers.index(0)
+            # need to wrap
+            if target >= len(numbers):
+                for number_2 in numbers[:index]:
+                    number_2.current += 1
+                numbers = [number] + numbers[:index] + numbers[index + 1 :]
+
+                target = offset - (len(numbers) - index) + 1
+                index = 0
+
+            for number_2 in numbers[index : target + 1]:
+                number_2.current -= 1
+
+            number.current = target
+            numbers = (
+                numbers[:index]
+                + numbers[index + 1 : target + 1]
+                + [number]
+                + numbers[target + 1 :]
+            )
+
+    index_of_0 = numbers.index(0)  # type: ignore
     return sum(
         numbers[(index_of_0 + offset) % len(numbers)].value * key
         for offset in (1000, 2000, 3000)
