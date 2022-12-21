@@ -178,7 +178,7 @@ def run(blueprint: dict[Reagent, dict[Reagent, int]], max_time: int) -> int:
 
 answer_1 = sum(
     (i_blueprint + 1) * run(blueprint, 24)
-    for i_blueprint, blueprint in enumerate(tqdm(blueprints))
+    for i_blueprint, blueprint in enumerate(blueprints)
 )
 print(f"answer 1 is {answer_1}")
 
