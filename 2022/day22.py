@@ -71,8 +71,9 @@ def wrap_part_2(y0: int, x0: int, r0: str) -> tuple[int, int, str]:
             y0 = board.shape[0] - y0 - 1
             return y0, row_last_non_void[y0], "W"
         elif y0 in range(4, 8):
-            x0 = row_last_non_void[8] - (x0 - 4)
-            return row_first_non_void[x0], x0, "S"
+            print(x0, row_last_non_void[8], row_last_non_void[8] - (y0 - 4))
+            x0 = row_last_non_void[8] - (y0 - 4)
+            return col_first_non_void[x0], x0, "S"
         else:
             y0 = board.shape[0] - y0 - 1
             return y0, row_last_non_void[y0], "W"
@@ -125,10 +126,14 @@ def wrap_part_2(y0: int, x0: int, r0: str) -> tuple[int, int, str]:
 
 wrap = wrap_part_2
 
+# directions = directions[:5]
+
 print(y0, x0, r0)
 
 facing = np.zeros_like(board, dtype=str)
 facing.fill(" ")
+facing[board != VOID] = "."
+facing[board == WALL] = "#"
 
 for direction in directions:
     # print(f"{y0} {x0} {r0} ({direction})")
