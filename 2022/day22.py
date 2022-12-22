@@ -78,13 +78,14 @@ def wrap_part_2(y0: int, x0: int, r0: str) -> tuple[int, int, str]:
             return y0, row_last_non_void[y0], "W"
     elif r0 == "S":
         if x0 in range(0, 4):
-            ...
+            y0 = board.shape[0] - 1
+            return y0, row_first_non_void[y0] + 3 - x0, "N"
         elif x0 in range(4, 8):
             y0 = col_last_non_void[x0] + 8 - x0
             return y0, row_first_non_void[y0], "E"
         elif x0 in range(8, 12):
             # 8 -> 3, 9 -> 2
-            x0 = 12 - x0 - 1
+            x0 = board.shape[0] - x0 - 1
             return col_last_non_void[x0], x0, "N"
         else:
             y0 = col_first_non_void[0] + board.shape[1] - x0 - 1
@@ -100,25 +101,40 @@ def wrap_part_2(y0: int, x0: int, r0: str) -> tuple[int, int, str]:
             x0 = 4 + board.shape[0] - y0 - 1
             return col_last_non_void[x0], x0, "N"
     elif r0 == "N":
-        return col_last_non_void[x0], x0, r0
+        if x0 in range(0, 4):
+            y0 = 0
+            return y0, row_first_non_void[y0] + 3 - x0, "S"
+        elif x0 in range(4, 8):
+            y0 = x0 - 4
+            return y0, row_first_non_void[y0], "E"
+        elif x0 in range(8, 12):
+            x0 = 11 - x0
+            return col_first_non_void[x0], x0, "S"
+        else:
+            y0 = 4 + board.shape[0] - x0 - 1
+            return y0, row_last_non_void[y0], "W"
 
     assert False
 
 
-for i in range(4):
-    print(wrap_part_2(i, 8 + i - 1, "E"))
+# for i in range(4):
+#     print(wrap_part_2(i, 8 + i - 1, "E"))
 
-exit()
+# exit()
 
 
 wrap = wrap_part_2
 
 print(y0, x0, r0)
 
+facing = np.zeros_like(board, dtype=str)
+facing.fill(" ")
+
 for direction in directions:
     # print(f"{y0} {x0} {r0} ({direction})")
     # r1 = {"N": "S", "S": "N", "W": "E", "E": "W"}[r0]
     # print(f"{board.shape[0] - y0 - 1} {board.shape[1] - x0 - 1} {r1} ({direction})")
+    facing[y0, x0] = {"E": ">", "W": "<", "N": "^", "S": "v"}[r0]
 
     if isinstance(direction, int):
         while direction > 0:
@@ -209,6 +225,10 @@ for direction in directions:
             "W": {"L": "S", "R": "N"},
             "S": {"L": "E", "R": "W"},
         }[r0][direction]
+
+facing[y0, x0] = {"E": ">", "W": "<", "N": "^", "S": "v"}[r0]
+
+print("\n".join(map("".join, facing)))
 
 if invert:
     print(y0, x0, r0, "->", end=" ")
