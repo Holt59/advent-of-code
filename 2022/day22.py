@@ -51,6 +51,68 @@ row_last_non_void = board.shape[1] - np.argmax(board[:, ::-1] != VOID, axis=1) -
 col_first_non_void = np.argmax(board != VOID, axis=0)
 col_last_non_void = board.shape[0] - np.argmax(board[::-1, :] != VOID, axis=0) - 1
 
+
+def wrap_part_1(y0: int, x0: int, r0: str) -> tuple[int, int, str]:
+    if r0 == "E":
+        return y0, row_first_non_void[y0], r0
+    elif r0 == "S":
+        return col_first_non_void[x0], x0, r0
+    elif r0 == "W":
+        return y0, row_last_non_void[y0], r0
+    elif r0 == "N":
+        return col_last_non_void[x0], x0, r0
+
+    assert False
+
+
+def wrap_part_2(y0: int, x0: int, r0: str) -> tuple[int, int, str]:
+    if r0 == "E":
+        if y0 in range(0, 4):
+            y0 = board.shape[0] - y0 - 1
+            return y0, row_last_non_void[y0], "W"
+        elif y0 in range(4, 8):
+            x0 = row_last_non_void[8] - (x0 - 4)
+            return row_first_non_void[x0], x0, "S"
+        else:
+            y0 = board.shape[0] - y0 - 1
+            return y0, row_last_non_void[y0], "W"
+    elif r0 == "S":
+        if x0 in range(0, 4):
+            ...
+        elif x0 in range(4, 8):
+            y0 = col_last_non_void[x0] + 8 - x0
+            return y0, row_first_non_void[y0], "E"
+        elif x0 in range(8, 12):
+            # 8 -> 3, 9 -> 2
+            x0 = 12 - x0 - 1
+            return col_last_non_void[x0], x0, "N"
+        else:
+            y0 = col_first_non_void[0] + board.shape[1] - x0 - 1
+            return y0, row_first_non_void[y0], "W"
+    elif r0 == "W":
+        if y0 in range(0, 4):
+            x0 = 4 + y0
+            return col_first_non_void[x0], x0, "S"
+        elif y0 in range(4, 8):
+            x0 = board.shape[1] - (y0 - 4) - 1
+            return board.shape[0] - 1, x0, "N"
+        else:
+            x0 = 4 + board.shape[0] - y0 - 1
+            return col_last_non_void[x0], x0, "N"
+    elif r0 == "N":
+        return col_last_non_void[x0], x0, r0
+
+    assert False
+
+
+for i in range(4):
+    print(wrap_part_2(i, 8 + i - 1, "E"))
+
+exit()
+
+
+wrap = wrap_part_2
+
 print(y0, x0, r0)
 
 for direction in directions:
@@ -79,35 +141,33 @@ for direction in directions:
                     # print("E2")
                     x0 = x0 + direction
                     direction = 0
-                elif board[y0, row_first_non_void[y0]] == WALL:
-                    # print("E3")
-                    x0 = row_last_non_void[y0]
-                    direction = 0
                 else:
-                    # print("E4")
-                    direction = direction - (row_last_non_void[y0] - x0) - 1
-                    x0 = row_first_non_void[y0]
+                    y0_t, x0_t, r0_t = wrap(y0, x0, r0)
+                    if board[y0_t, x0_t] == WALL:
+                        x0 = row_last_non_void[y0]
+                        direction = 0
+                    else:
+                        direction = direction - (row_last_non_void[y0] - x0) - 1
+                        y0, x0, r0 = y0_t, x0_t, r0_t
             elif r0 == "S":
                 yi = np.where(board[y0 + 1 : y0 + direction + 1, x0] == WALL)[0]
                 if len(yi):
-                    # print("S1")
                     y0 = y0 + yi[0]
                     direction = 0
                 elif (
                     y0 + direction < board.shape[0]
                     and board[y0 + direction, x0] == EMPTY
                 ):
-                    # print("S2")
                     y0 = y0 + direction
                     direction = 0
-                elif board[col_first_non_void[x0], x0] == WALL:
-                    print("S3")
-                    y0 = col_last_non_void[x0]
-                    direction = 0
                 else:
-                    # print("S4")
-                    direction = direction - (col_last_non_void[x0] - y0) - 1
-                    y0 = col_first_non_void[x0]
+                    y0_t, x0_t, r0_t = wrap(y0, x0, r0)
+                    if board[y0_t, x0_t] == WALL:
+                        y0 = col_last_non_void[x0]
+                        direction = 0
+                    else:
+                        direction = direction - (col_last_non_void[x0] - y0) - 1
+                        y0, x0, r0 = y0_t, x0_t, r0_t
             elif r0 == "W":
                 left = max(x0 - direction - 1, 0)
                 xi = np.where(board[y0, left:x0] == WALL)[0]
@@ -117,13 +177,14 @@ for direction in directions:
                 elif x0 - direction >= 0 and board[y0, x0 - direction] == EMPTY:
                     x0 = x0 - direction
                     direction = 0
-                elif board[y0, row_last_non_void[y0]] == WALL:
-                    x0 = row_first_non_void[y0]
-                    direction = 0
                 else:
-                    # print("W", x0, row_first_non_void[y0], direction)
-                    direction = direction - (x0 - row_first_non_void[y0]) - 1
-                    x0 = row_last_non_void[y0]
+                    y0_t, x0_t, r0_t = wrap(y0, x0, r0)
+                    if board[y0_t, x0_t] == WALL:
+                        x0 = row_first_non_void[y0]
+                        direction = 0
+                    else:
+                        direction = direction - (x0 - row_first_non_void[y0]) - 1
+                        y0, x0, r0 = y0_t, x0_t, r0_t
             elif r0 == "N":
                 top = max(y0 - direction - 1, 0)
                 yi = np.where(board[top:y0, x0] == WALL)[0]
@@ -133,12 +194,14 @@ for direction in directions:
                 elif y0 - direction >= 0 and board[y0 - direction, x0] == EMPTY:
                     y0 = y0 - direction
                     direction = 0
-                elif board[col_last_non_void[x0], x0] == WALL:
-                    y0 = col_first_non_void[x0]
-                    direction = 0
                 else:
-                    direction = direction - (y0 - col_first_non_void[x0]) - 1
-                    y0 = col_last_non_void[x0]
+                    y0_t, x0_t, r0_t = wrap(y0, x0, r0)
+                    if board[y0_t, x0_t] == WALL:
+                        y0 = col_first_non_void[x0]
+                        direction = 0
+                    else:
+                        direction = direction - (y0 - col_first_non_void[x0]) - 1
+                        y0, x0, r0 = y0_t, x0_t, r0_t
     else:
         r0 = {
             "E": {"L": "N", "R": "S"},
