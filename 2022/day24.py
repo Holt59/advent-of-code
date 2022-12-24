@@ -17,7 +17,6 @@ winds = {
 n_rows, n_cols = len(lines) - 2, len(lines[0]) - 2
 CYCLE = math.lcm(n_rows, n_cols)
 
-# for each row, set of forward winds
 east_winds = [{j for j in range(n_cols) if (i, j, ">") in winds} for i in range(n_rows)]
 west_winds = [{j for j in range(n_cols) if (i, j, "<") in winds} for i in range(n_rows)]
 north_winds = [
@@ -32,14 +31,13 @@ def run(start: tuple[int, int], start_cycle: int, end: tuple[int, int]):
     def heuristic(y: int, x: int) -> int:
         return abs(end[0] - y) + abs(end[1] - x)
 
-    # (distance + heuristic, distance, start_pos)
+    # (distance + heuristic, distance, (start_pos, cycle))
     queue = [(heuristic(start[0], start[1]), 0, ((start[0], start[1]), start_cycle))]
     visited: set[tuple[tuple[int, int], int]] = set()
     distances: dict[tuple[int, int], dict[int, int]] = defaultdict(lambda: {})
 
     while queue:
         _, distance, ((y, x), cycle) = heapq.heappop(queue)
-        # print(y, x, distance, cycle)
 
         if ((y, x), cycle) in visited:
             continue
@@ -68,16 +66,14 @@ def run(start: tuple[int, int], start_cycle: int, end: tuple[int, int]):
                 continue
 
             if (ty, tx) != start:
-                if any(ty == (vy + n_cycle) % n_rows for vy in south_winds[tx]):
+                if (ty - n_cycle) % n_rows in south_winds[tx]:
                     continue
-                if any(ty == (vy - n_cycle) % n_rows for vy in north_winds[tx]):
+                if (ty + n_cycle) % n_rows in north_winds[tx]:
                     continue
-                if any(tx == (vx - n_cycle) % n_cols for vx in west_winds[ty]):
+                if (tx + n_cycle) % n_cols in west_winds[ty]:
                     continue
-                if any(tx == (vx + n_cycle) % n_cols for vx in east_winds[ty]):
+                if (tx - n_cycle) % n_cols in east_winds[ty]:
                     continue
-
-            # print(f"{y} {x} [{cycle}] -> {ty} {tx}")
 
             heapq.heappush(
                 queue,
