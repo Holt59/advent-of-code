@@ -46,6 +46,7 @@ SIZE = np.gcd(*board.shape)
 
 # TODO: deduce this from the actual cube...
 faces_wrap: dict[int, dict[str, Callable[[int, int], tuple[int, int, str]]]]
+
 if board.shape == (12, 16):  # example
     faces_wrap = {
         1: {

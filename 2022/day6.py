@@ -2,14 +2,15 @@
 
 import sys
 
-data = sys.stdin.read().strip()
-
 
 def index_of_first_n_differents(data: str, n: int) -> int:
     for i in range(len(data)):
         if len(set(data[i : i + n])) == n:
             return i + n
     return -1
+
+
+data = sys.stdin.read().strip()
 
 
 print(f"answer 1 is {index_of_first_n_differents(data, 4)}")

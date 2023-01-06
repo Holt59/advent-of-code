@@ -20,6 +20,6 @@ n_per_group = 3
 part2 = sum(
     priorities[c]
     for i in range(0, len(lines), n_per_group)
-    for c in set.intersection(*map(set, (lines[i : i + n_per_group])))
+    for c in set(lines[i]).intersection(*lines[i + 1 : i + n_per_group])
 )
 print(f"score 2 is {part2}")
